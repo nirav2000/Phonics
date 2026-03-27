@@ -1,0 +1,39 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "word vault",
+      "intents": [
+        {
+          "name": "AddWordIntent",
+          "slots": [
+            { "name": "word", "type": "AMAZON.SearchQuery" },
+            { "name": "source", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "add the word {word}",
+            "add the word {word} from {source}",
+            "save the word {word}",
+            "remember the word {word}",
+            "store the word {word} from {source}"
+          ]
+        },
+        {
+          "name": "GetWordIntent",
+          "slots": [
+            { "name": "word", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "what does {word} mean",
+            "tell me about the word {word}",
+            "help me with the word {word}",
+            "what is {word}"
+          ]
+        },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] }
+      ],
+      "types": []
+    }
+  }
+}

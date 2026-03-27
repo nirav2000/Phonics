@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /words/{wordId} {
+      // Starter rule for a low-friction prototype.
+      // Tighten this before production by requiring Firebase Auth and scoping
+      // writes/reads to the authenticated family account.
+      allow read, write: if true;
+    }
+  }
+}
