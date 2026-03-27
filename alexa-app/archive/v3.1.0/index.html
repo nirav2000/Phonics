@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Vault v3 Firebase</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f6f8fb;color:#1f2937}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .panel{background:#fff;border:1px solid #dbe3ee;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+    label{display:block;font-size:13px;font-weight:700;margin:10px 0 6px}
+    input,textarea,select,button{font:inherit}
+    input,textarea,select{width:100%;padding:12px;border:1px solid #dbe3ee;border-radius:12px;box-sizing:border-box}
+    textarea{min-height:86px;resize:vertical}
+    button{border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .row{display:flex;gap:10px;flex-wrap:wrap}.primary{background:#2563eb;color:#fff}.secondary{background:#eef2f7}.danger{background:#fee2e2;color:#991b1b}
+    .small{font-size:12px;color:#6b7280}.card{border:1px solid #dbe3ee;border-radius:14px;padding:14px;margin:10px 0}
+    .meta{font-size:12px;color:#6b7280}.ok{color:#166534}.warn{color:#9a3412}
+    @media (max-width: 900px){.grid{grid-template-columns:1fr}}
+  </style>
+  <script src="word-vault-voice.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <h1>Word Vault v3 · Firebase</h1>
+  <p>This version has your Firebase web config already inserted. Open this file and search for <strong>const firebaseConfig</strong> if you want to verify or change it later.</p>
+  <div class="grid">
+    <section class="panel">
+      <h2>Settings</h2>
+      <label for="familyId">Family ID</label>
+      <input id="familyId" value="shamir-son-reading" />
+      <div class="small">Use the same family ID in the web app and Alexa so both write to the same word bank.</div>
+
+      <h3>Voice</h3>
+      <div class="row">
+        <button class="secondary" id="wakeBtn">Wake up voice</button>
+        <button class="secondary" id="refreshVoicesBtn">Refresh voices</button>
+      </div>
+      <label for="voiceSelect">Voice</label>
+      <select id="voiceSelect"></select>
+      <label for="rateInput">Rate</label>
+      <input id="rateInput" type="range" min="0.5" max="1.2" step="0.05" value="0.9" />
+      <label for="pitchInput">Pitch</label>
+      <input id="pitchInput" type="range" min="0.7" max="1.4" step="0.05" value="1" />
+      <div class="small" id="speechStatus">Speech not tested yet.</div>
+
+      <h3>Firebase status</h3>
+      <div class="small">Project ID: <strong>word-vault-b0ebb</strong></div>
+      <div class="small">Firestore collection used: <strong>words</strong></div>
+      <div class="small" id="dbStatus">Database not checked yet.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Add a word</h2>
+      <label for="wordInput">Word</label>
+      <input id="wordInput" placeholder="blizzard" />
+      <label for="sourceInput">Book or source</label>
+      <input id="sourceInput" placeholder="There's a Yeti in the Playground" />
+      <label for="phonicsInput">Chunks / syllables</label>
+      <input id="phonicsInput" placeholder="bliz-zard" />
+      <label for="definitionInput">Child-friendly meaning</label>
+      <textarea id="definitionInput"></textarea>
+      <label for="sentenceInput">Example sentence</label>
+      <textarea id="sentenceInput"></textarea>
+      <label for="similarInput">Similar words</label>
+      <input id="similarInput" placeholder="snowstorm, whiteout" />
+      <label for="notesInput">Parent notes</label>
+      <textarea id="notesInput" placeholder="Guessed lizard first. Needs to check middle of word."></textarea>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="saveBtn">Save word</button>
+        <button class="secondary" id="speakWordBtn">Speak word</button>
+        <button class="secondary" id="speakSentenceBtn">Speak sentence</button>
+      </div>
+      <div class="small" id="saveStatus"></div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:20px">
+    <h2>Saved words</h2>
+    <div class="row">
+      <button class="secondary" id="loadBtn">Reload from Firestore</button>
+    </div>
+    <div id="list"></div>
+  </section>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getAnalytics, isSupported as analyticsSupported } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+  import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+  // Your web app's Firebase configuration
+  // Search for "const firebaseConfig" if you need to change it later.
+  const firebaseConfig = {
+    apiKey: "AIzaSyBNW1VgFn_cdkcsXEYEkgoKByBmStd86fA",
+    authDomain: "word-vault-b0ebb.firebaseapp.com",
+    projectId: "word-vault-b0ebb",
+    storageBucket: "word-vault-b0ebb.firebasestorage.app",
+    messagingSenderId: "196919947356",
+    appId: "1:196919947356:web:7433d030a26bfb74c5b699",
+    measurementId: "G-EE5KDH4HEK"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  if (await analyticsSupported()) { getAnalytics(app); }
+  const db = getFirestore(app);
+  const voice = new window.WordVaultVoice({ lang: 'en-GB' });
+
+  const els = Object.fromEntries(['familyId','voiceSelect','rateInput','pitchInput','speechStatus','dbStatus','wordInput','sourceInput','phonicsInput','definitionInput','sentenceInput','similarInput','notesInput','saveBtn','speakWordBtn','speakSentenceBtn','saveStatus','loadBtn','list','wakeBtn','refreshVoicesBtn'].map(id => [id, document.getElementById(id)]));
+
+  async function loadVoices(){
+    const voices = await voice.getVoices();
+    els.voiceSelect.innerHTML = '';
+    voices.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${v.name} (${v.lang})`;
+      if (voice.voice && v.name === voice.voice.name) opt.selected = true;
+      els.voiceSelect.appendChild(opt);
+    });
+    els.speechStatus.textContent = voices.length ? `Loaded ${voices.length} voices.` : 'No voices found yet. Tap Wake up voice, then Refresh voices.';
+  }
+
+  async function testDb(){
+    try {
+      const q = query(collection(db, 'words'), where('family_id', '==', els.familyId.value.trim() || 'shamir-son-reading'), orderBy('created_at', 'desc'));
+      await getDocs(q);
+      els.dbStatus.textContent = 'Firestore connection looks OK.';
+      els.dbStatus.className = 'small ok';
+    } catch (err) {
+      els.dbStatus.textContent = `Firestore check failed: ${err.message}`;
+      els.dbStatus.className = 'small warn';
+    }
+  }
+
+  async function saveWord(){
+    const familyId = els.familyId.value.trim() || 'shamir-son-reading';
+    try {
+      await addDoc(collection(db, 'words'), {
+        family_id: familyId,
+        word: els.wordInput.value.trim(),
+        source: els.sourceInput.value.trim(),
+        phonics: els.phonicsInput.value.trim(),
+        definition: els.definitionInput.value.trim(),
+        sentence: els.sentenceInput.value.trim(),
+        similar: els.similarInput.value.trim(),
+        notes: els.notesInput.value.trim(),
+        created_at: serverTimestamp()
+      });
+      els.saveStatus.textContent = 'Saved to Firestore.';
+      await loadWords();
+    } catch (err) {
+      els.saveStatus.textContent = `Save failed: ${err.message}`;
+    }
+  }
+
+  async function loadWords(){
+    const familyId = els.familyId.value.trim() || 'shamir-son-reading';
+    try {
+      const q = query(collection(db, 'words'), where('family_id', '==', familyId), orderBy('created_at', 'desc'));
+      const snap = await getDocs(q);
+      els.list.innerHTML = '';
+      if (snap.empty) { els.list.innerHTML = '<div class="small">No words saved yet.</div>'; return; }
+      snap.forEach(doc => {
+        const item = doc.data();
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `<strong>${item.word || ''}</strong><div class="meta">${item.source || ''}</div><div>${item.definition || ''}</div><div class="small">${item.phonics || ''}</div>`;
+        els.list.appendChild(div);
+      });
+    } catch (err) {
+      els.list.innerHTML = `<div class="small warn">Load failed: ${err.message}</div>`;
+    }
+  }
+
+  els.voiceSelect.addEventListener('change', () => voice.setVoiceByIndex(els.voiceSelect.value));
+  els.wakeBtn.addEventListener('click', async () => { await voice.wakeUp(); await loadVoices(); });
+  els.refreshVoicesBtn.addEventListener('click', loadVoices);
+  els.speakWordBtn.addEventListener('click', async () => {
+    try {
+      await voice.speak(els.wordInput.value.trim(), { rate: els.rateInput.value, pitch: els.pitchInput.value });
+      els.speechStatus.textContent = 'Word played successfully.';
+    } catch (err) {
+      els.speechStatus.textContent = `Speech failed: ${err}`;
+    }
+  });
+  els.speakSentenceBtn.addEventListener('click', async () => {
+    try {
+      await voice.speak(els.sentenceInput.value.trim(), { rate: els.rateInput.value, pitch: els.pitchInput.value });
+      els.speechStatus.textContent = 'Sentence played successfully.';
+    } catch (err) {
+      els.speechStatus.textContent = `Speech failed: ${err}`;
+    }
+  });
+  els.saveBtn.addEventListener('click', saveWord);
+  els.loadBtn.addEventListener('click', loadWords);
+
+  await loadVoices();
+  await testDb();
+  await loadWords();
+</script>
+</body>
+</html>

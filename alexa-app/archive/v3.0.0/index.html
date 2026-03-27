@@ -3,202 +3,595 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Vault v3 Firebase</title>
+  <title>Word Vault v3 · Firebase</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f6f8fb;color:#1f2937}
-    .wrap{max-width:1100px;margin:0 auto;padding:20px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-    .panel{background:#fff;border:1px solid #dbe3ee;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
-    label{display:block;font-size:13px;font-weight:700;margin:10px 0 6px}
-    input,textarea,select,button{font:inherit}
-    input,textarea,select{width:100%;padding:12px;border:1px solid #dbe3ee;border-radius:12px;box-sizing:border-box}
-    textarea{min-height:86px;resize:vertical}
-    button{border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
-    .row{display:flex;gap:10px;flex-wrap:wrap}.primary{background:#2563eb;color:#fff}.secondary{background:#eef2f7}.danger{background:#fee2e2;color:#991b1b}
-    .small{font-size:12px;color:#6b7280}.card{border:1px solid #dbe3ee;border-radius:14px;padding:14px;margin:10px 0}
-    .meta{font-size:12px;color:#6b7280}.ok{color:#166534}.warn{color:#9a3412}
-    @media (max-width: 900px){.grid{grid-template-columns:1fr}}
+    :root {
+      --bg:#f6f8fb; --panel:#fff; --text:#1f2937; --muted:#6b7280; --line:#dbe3ee;
+      --accent:#2563eb; --accent-soft:#e8f0ff; --danger:#b91c1c; --ok:#166534;
+      --warn:#9a3412; --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1320px;margin:0 auto;padding:24px}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+    .hero,.main{display:grid;gap:20px}.hero{grid-template-columns:1.25fr 1fr;margin-bottom:20px}.main{grid-template-columns:430px 1fr}
+    .pad{padding:18px 20px} h1,h2,h3,p{margin-top:0}.muted{color:var(--muted)} .small{font-size:12px;color:var(--muted)}
+    .badge{display:inline-block;background:var(--accent-soft);color:var(--accent);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;margin-bottom:12px}
+    .actions,.toolbar,.minirow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .toolbar{margin-bottom:14px}.right{margin-left:auto}
+    button,input,textarea,select{font:inherit}
+    button{border:0;border-radius:12px;padding:11px 14px;cursor:pointer;font-weight:700}
+    .primary{background:var(--accent);color:#fff}.secondary{background:#eef2f7;color:var(--text)}.danger{background:#fee2e2;color:var(--danger)}.success{background:#dcfce7;color:var(--ok)}
+    .field{margin-bottom:14px} label{display:block;font-size:13px;font-weight:800;margin-bottom:6px}
+    input[type=text],input[type=search],textarea,select,input[type=password],input[type=number]{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text)}
+    textarea{min-height:80px;resize:vertical}.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}.trip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.stat{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fbfdff}.stat .v{font-size:26px;font-weight:800}
+    .word-list{display:grid;gap:12px}.word-card{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fff}
+    .word-head{display:flex;justify-content:space-between;gap:12px;align-items:start}.word-title{font-size:22px;font-weight:800;margin:0}.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 8px}
+    .tag{font-size:12px;padding:5px 9px;border-radius:999px;background:#f2f6fb;border:1px solid var(--line)}
+    .meta{display:grid;gap:8px;margin-top:10px}.meta-block{background:#fafcff;border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+    .meta-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+    .empty{text-align:center;border:2px dashed var(--line);border-radius:16px;padding:24px;color:var(--muted);background:#fcfdff}
+    .banner{padding:10px 12px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:var(--warn);margin-top:12px}
+    .ok-banner{background:#ecfdf5;border-color:#bbf7d0;color:var(--ok)}
+    .voice-grid{display:grid;grid-template-columns:1.5fr .7fr .7fr;gap:10px}.pill{font-size:12px;font-weight:700}
+    code.inline{background:#f4f7fb;padding:2px 6px;border-radius:6px;border:1px solid var(--line)}
+    @media (max-width: 980px){.hero,.main,.split,.trip,.stats,.voice-grid{grid-template-columns:1fr}.wrap{padding:14px}}
   </style>
-  <script src="word-vault-voice.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <h1>Word Vault v3 · Firebase</h1>
-  <p>This version has your Firebase web config already inserted. Open this file and search for <strong>const firebaseConfig</strong> if you want to verify or change it later.</p>
-  <div class="grid">
-    <section class="panel">
-      <h2>Settings</h2>
-      <label for="familyId">Family ID</label>
-      <input id="familyId" value="shamir-son-reading" />
-      <div class="small">Use the same family ID in the web app and Alexa so both write to the same word bank.</div>
-
-      <h3>Voice</h3>
-      <div class="row">
-        <button class="secondary" id="wakeBtn">Wake up voice</button>
-        <button class="secondary" id="refreshVoicesBtn">Refresh voices</button>
+  <div class="wrap">
+    <section class="hero">
+      <div class="panel pad">
+        <div class="badge">Word Vault v3 · Firebase + reusable voice module</div>
+        <h1>Shared word bank for reading support</h1>
+        <p class="muted">This version uses Firebase Firestore for shared storage, keeps speech controls in a separate reusable file, and adds voice choice so you can pick the best voice on Chrome on iPad.</p>
+        <div class="actions">
+          <button class="primary" id="seedBtn">Load starter words</button>
+          <button class="secondary" id="exportBtn">Export JSON</button>
+          <button class="secondary" id="importBtn">Import JSON</button>
+          <button class="secondary" id="syncBtn">Sync now</button>
+          <input type="file" id="importFile" accept="application/json" hidden />
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="muted">Words saved</div><div class="v" id="countWords">0</div></div>
+          <div class="stat"><div class="muted">Need review</div><div class="v" id="countReview">0</div></div>
+          <div class="stat"><div class="muted">Book sources</div><div class="v" id="countSources">0</div></div>
+          <div class="stat"><div class="muted">Cloud status</div><div class="v" id="cloudStatus">Off</div></div>
+        </div>
+        <div id="statusBanner" class="banner">Cloud sync is not configured yet. The app is using local browser storage only.</div>
       </div>
-      <label for="voiceSelect">Voice</label>
-      <select id="voiceSelect"></select>
-      <label for="rateInput">Rate</label>
-      <input id="rateInput" type="range" min="0.5" max="1.2" step="0.05" value="0.9" />
-      <label for="pitchInput">Pitch</label>
-      <input id="pitchInput" type="range" min="0.7" max="1.4" step="0.05" value="1" />
-      <div class="small" id="speechStatus">Speech not tested yet.</div>
+      <div class="panel pad">
+        <h2>Firebase setup</h2>
+        <div class="field"><label for="firebaseConfig">Firebase config JSON</label><textarea id="firebaseConfig" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea></div>
+        <div class="field"><label for="familyId">Family / child ID</label><input id="familyId" type="text" placeholder="e.g. shamir-son-reading"></div>
+        <div class="actions">
+          <button class="primary" id="saveCloudBtn">Save Firebase settings</button>
+          <button class="secondary" id="testCloudBtn">Test connection</button>
+          <button class="danger" id="clearCloudBtn">Clear Firebase settings</button>
+        </div>
+        <p class="small">Use the same family ID in the web app and Alexa Lambda so they point at the same Firestore documents.</p>
 
-      <h3>Firebase status</h3>
-      <div class="small">Project ID: <strong>word-vault-b0ebb</strong></div>
-      <div class="small">Firestore collection used: <strong>words</strong></div>
-      <div class="small" id="dbStatus">Database not checked yet.</div>
+        <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+
+        <h2>Voice</h2>
+        <div class="voice-grid">
+          <div class="field">
+            <label for="voiceSelect">Choose voice</label>
+            <select id="voiceSelect"><option value="">Loading voices...</option></select>
+          </div>
+          <div class="field">
+            <label for="rateInput">Rate</label>
+            <input id="rateInput" type="number" min="0.5" max="1.5" step="0.05" value="0.92">
+          </div>
+          <div class="field">
+            <label for="pitchInput">Pitch</label>
+            <input id="pitchInput" type="number" min="0.5" max="1.5" step="0.05" value="1">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="secondary" id="refreshVoicesBtn">Refresh voices</button>
+          <button class="secondary" id="warmUpVoiceBtn">Wake up voice</button>
+          <button class="secondary" id="testVoiceBtn">Test current voice</button>
+          <button class="danger" id="stopVoiceBtn">Stop</button>
+        </div>
+        <p class="small">On iPad, tap a speech button directly after the page has loaded. Browser speech often behaves best on a hosted page like GitHub Pages or Firebase Hosting rather than a local preview.</p>
+        <div id="voiceStatus" class="banner">Voice system not initialised yet.</div>
+      </div>
     </section>
 
-    <section class="panel">
-      <h2>Add a word</h2>
-      <label for="wordInput">Word</label>
-      <input id="wordInput" placeholder="blizzard" />
-      <label for="sourceInput">Book or source</label>
-      <input id="sourceInput" placeholder="There's a Yeti in the Playground" />
-      <label for="phonicsInput">Chunks / syllables</label>
-      <input id="phonicsInput" placeholder="bliz-zard" />
-      <label for="definitionInput">Child-friendly meaning</label>
-      <textarea id="definitionInput"></textarea>
-      <label for="sentenceInput">Example sentence</label>
-      <textarea id="sentenceInput"></textarea>
-      <label for="similarInput">Similar words</label>
-      <input id="similarInput" placeholder="snowstorm, whiteout" />
-      <label for="notesInput">Parent notes</label>
-      <textarea id="notesInput" placeholder="Guessed lizard first. Needs to check middle of word."></textarea>
-      <div class="row" style="margin-top:12px">
-        <button class="primary" id="saveBtn">Save word</button>
-        <button class="secondary" id="speakWordBtn">Speak word</button>
-        <button class="secondary" id="speakSentenceBtn">Speak sentence</button>
+    <section class="main">
+      <div class="panel pad">
+        <h2 id="formTitle">Add a word</h2>
+        <div class="field"><label for="wordInput">Word</label><input id="wordInput" type="text" placeholder="e.g. blizzard"></div>
+        <div class="split">
+          <div class="field"><label for="sourceInput">Book or source</label><input id="sourceInput" type="text" placeholder="e.g. There's a Yeti in the Playground"></div>
+          <div class="field"><label for="statusInput">Status</label><select id="statusInput"><option value="new">New</option><option value="review">Needs review</option><option value="secure">Secure</option></select></div>
+        </div>
+        <div class="trip">
+          <div class="field"><label for="childAgeInput">Age</label><input id="childAgeInput" type="text" placeholder="9"></div>
+          <div class="field"><label for="categoryInput">Category</label><input id="categoryInput" type="text" placeholder="weather, school, feelings"></div>
+          <div class="field"><label for="phonicsInput">Chunks / syllables</label><input id="phonicsInput" type="text" placeholder="bliz-zard"></div>
+        </div>
+        <div class="actions" style="margin-bottom:14px">
+          <button class="primary" id="enrichBtn">Auto-fill helpful info</button>
+          <button class="secondary" id="speakBtn">Speak word</button>
+          <button class="secondary" id="speakSentenceBtn">Speak sentence</button>
+        </div>
+        <div class="field"><label for="definitionInput">Child-friendly meaning</label><textarea id="definitionInput" placeholder="A simple meaning a 9-year-old can understand"></textarea></div>
+        <div class="field"><label for="sentenceInput">Example sentence</label><textarea id="sentenceInput" placeholder="Write a sentence using the word"></textarea></div>
+        <div class="field"><label for="similarInput">Similar words</label><input id="similarInput" type="text" placeholder="snowstorm, whiteout, storm"></div>
+        <div class="field"><label for="notInput">What it is not</label><input id="notInput" type="text" placeholder="not a mystery, not just cold weather"></div>
+        <div class="field"><label for="notesInput">Parent notes</label><textarea id="notesInput" placeholder="Guessed ‘lizard’ for this word. Need to check middle and end."></textarea><div class="small">Use notes for the exact error he made so the word becomes a teaching target, not just a dictionary entry.</div></div>
+        <div class="actions">
+          <button class="primary" id="saveBtn">Save word</button>
+          <button class="secondary" id="clearBtn">Clear</button>
+          <button class="danger" id="deleteBtn" style="display:none">Delete</button>
+        </div>
       </div>
-      <div class="small" id="saveStatus"></div>
+
+      <div class="panel pad">
+        <div class="toolbar">
+          <input id="searchInput" type="search" placeholder="Search words, meanings, notes, or source...">
+          <select id="filterInput"><option value="all">All statuses</option><option value="new">New</option><option value="review">Needs review</option><option value="secure">Secure</option></select>
+        </div>
+        <div id="wordList" class="word-list"></div>
+      </div>
     </section>
   </div>
 
-  <section class="panel" style="margin-top:20px">
-    <h2>Saved words</h2>
-    <div class="row">
-      <button class="secondary" id="loadBtn">Reload from Firestore</button>
-    </div>
-    <div id="list"></div>
-  </section>
-</div>
+  <script src="./word-vault-voice.js"></script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js';
+    import {
+      getFirestore,
+      collection,
+      doc,
+      getDocs,
+      setDoc,
+      deleteDoc,
+      query,
+      where,
+      orderBy,
+      enableIndexedDbPersistence
+    } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js';
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-  import { getAnalytics, isSupported as analyticsSupported } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
-  import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+    const LOCAL_STORAGE_KEY = 'word-vault-v3-local';
+    const CLOUD_SETTINGS_KEY = 'word-vault-v3-firebase';
+    const VOICE_SETTINGS_KEY = 'word-vault-voice-settings';
+    let editingId = null;
+    let firebaseApp = null;
+    let firestore = null;
+    let voiceManager = null;
 
-  // Your web app's Firebase configuration
-  // Search for "const firebaseConfig" if you need to change it later.
-  const firebaseConfig = {
-    apiKey: "AIzaSyBNW1VgFn_cdkcsXEYEkgoKByBmStd86fA",
-    authDomain: "word-vault-b0ebb.firebaseapp.com",
-    projectId: "word-vault-b0ebb",
-    storageBucket: "word-vault-b0ebb.firebasestorage.app",
-    messagingSenderId: "196919947356",
-    appId: "1:196919947356:web:7433d030a26bfb74c5b699",
-    measurementId: "G-EE5KDH4HEK"
-  };
+    const starterWords = [
+      { id: crypto.randomUUID(), family_id:'demo-family', word:'blizzard', source:"There's a Yeti in the Playground", status:'review', child_age:'9', category:'weather', phonics:'bliz-zard', definition:'A blizzard is a very strong snowstorm with lots of snow and wind.', sentence:'The children stayed inside because the blizzard made it unsafe to go home.', similar:'snowstorm, whiteout, storm', not_this:'not a mystery, not just cold weather, not drizzle', notes:"Guessed ‘lizard’ and ‘bizarre’. Needs to scan the middle of the word.", created_at:new Date().toISOString(), updated_at:new Date().toISOString() },
+      { id: crypto.randomUUID(), family_id:'demo-family', word:'indefinitely', source:"There's a Yeti in the Playground", status:'review', child_age:'9', category:'time', phonics:'in-def-in-ite-ly', definition:'If something goes on indefinitely, nobody knows exactly when it will stop.', sentence:'The match was delayed indefinitely because nobody knew when the storm would stop.', similar:'for now, ongoing, with no set end', not_this:'not definitely, not forever for sure, not immediately', notes:'Long word. Break into chunks first, then blend.', created_at:new Date().toISOString(), updated_at:new Date().toISOString() },
+      { id: crypto.randomUUID(), family_id:'demo-family', word:'Maisie', source:"There's a Yeti in the Playground", status:'review', child_age:'9', category:'names', phonics:'Mai-sie', definition:'Maisie is a girl’s name.', sentence:'Maisie started to shudder because she was frightened by the news.', similar:'Daisy, Katie', not_this:'not messy', notes:'Needs to notice this is a name and use all the letters.', created_at:new Date().toISOString(), updated_at:new Date().toISOString() }
+    ];
 
-  const app = initializeApp(firebaseConfig);
-  if (await analyticsSupported()) { getAnalytics(app); }
-  const db = getFirestore(app);
-  const voice = new window.WordVaultVoice({ lang: 'en-GB' });
+    const els = Object.fromEntries([
+      'wordInput','sourceInput','statusInput','childAgeInput','categoryInput','phonicsInput','definitionInput','sentenceInput','similarInput','notInput','notesInput',
+      'saveBtn','clearBtn','deleteBtn','enrichBtn','speakBtn','speakSentenceBtn','seedBtn','exportBtn','importBtn','importFile','wordList','searchInput','filterInput','formTitle','countWords','countReview','countSources','cloudStatus','statusBanner',
+      'firebaseConfig','familyId','saveCloudBtn','testCloudBtn','clearCloudBtn','syncBtn','voiceSelect','rateInput','pitchInput','voiceStatus','refreshVoicesBtn','testVoiceBtn','warmUpVoiceBtn','stopVoiceBtn'
+    ].map(id => [id, document.getElementById(id)]));
 
-  const els = Object.fromEntries(['familyId','voiceSelect','rateInput','pitchInput','speechStatus','dbStatus','wordInput','sourceInput','phonicsInput','definitionInput','sentenceInput','similarInput','notesInput','saveBtn','speakWordBtn','speakSentenceBtn','saveStatus','loadBtn','list','wakeBtn','refreshVoicesBtn'].map(id => [id, document.getElementById(id)]));
+    function localWords(){ try { return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]'); } catch { return []; } }
+    function saveLocalWords(words){ localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(words)); }
+    function cloudSettings(){ try { return JSON.parse(localStorage.getItem(CLOUD_SETTINGS_KEY) || '{}'); } catch { return {}; } }
+    function saveCloudSettings(data){ localStorage.setItem(CLOUD_SETTINGS_KEY, JSON.stringify(data)); }
+    function escapeHtml(str){ return (str || '').replace(/[&<>'"]/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[ch])); }
+    function escapeJs(s){ return (s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+    function capitalize(text){ return text ? text.charAt(0).toUpperCase() + text.slice(1) : ''; }
+    function simplifyDefinition(def){ return !def ? '' : def.replace(/\([^)]*\)/g,'').replace(/;/g,'. ').replace(/\s+/g,' ').trim(); }
 
-  async function loadVoices(){
-    const voices = await voice.getVoices();
-    els.voiceSelect.innerHTML = '';
-    voices.forEach((v, i) => {
-      const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = `${v.name} (${v.lang})`;
-      if (voice.voice && v.name === voice.voice.name) opt.selected = true;
-      els.voiceSelect.appendChild(opt);
-    });
-    els.speechStatus.textContent = voices.length ? `Loaded ${voices.length} voices.` : 'No voices found yet. Tap Wake up voice, then Refresh voices.';
-  }
-
-  async function testDb(){
-    try {
-      const q = query(collection(db, 'words'), where('family_id', '==', els.familyId.value.trim() || 'shamir-son-reading'), orderBy('created_at', 'desc'));
-      await getDocs(q);
-      els.dbStatus.textContent = 'Firestore connection looks OK.';
-      els.dbStatus.className = 'small ok';
-    } catch (err) {
-      els.dbStatus.textContent = `Firestore check failed: ${err.message}`;
-      els.dbStatus.className = 'small warn';
+    function splitWord(word){
+      const presets = { blizzard:'bliz-zard', indefinitely:'in-def-in-ite-ly', assembly:'as-sem-bly', shudder:'shud-der', foreseeable:'fore-see-able', emergency:'e-mer-gen-cy', maisie:'Mai-sie' };
+      return presets[word.toLowerCase()] || word;
     }
-  }
 
-  async function saveWord(){
-    const familyId = els.familyId.value.trim() || 'shamir-son-reading';
-    try {
-      await addDoc(collection(db, 'words'), {
-        family_id: familyId,
+    function toChildFriendly(word, rawDef){
+      const d = simplifyDefinition(rawDef); if (!d) return '';
+      const lower = word.toLowerCase();
+      if (lower === 'blizzard') return 'A blizzard is a very strong snowstorm with lots of snow and wind.';
+      if (lower === 'indefinitely') return 'If something goes on indefinitely, nobody knows exactly when it will stop.';
+      if (lower === 'assembly') return 'An assembly is when a whole school or a big group meets together.';
+      if (lower === 'shudder') return 'To shudder means to shake suddenly, often because you are cold, scared, or upset.';
+      return `${capitalize(word)} means ${d.charAt(0).toLowerCase()}${d.slice(1)}`.replace(/\.$/,'') + '.';
+    }
+
+    function makeSentence(word, definition){
+      const presets = {
+        blizzard:'The children stayed inside because the blizzard made it unsafe to go home.',
+        indefinitely:'The match was delayed indefinitely because nobody knew when the storm would stop.',
+        assembly:'The headteacher called an emergency assembly to tell the pupils the news.',
+        shudder:'He began to shudder when he heard the loud noise outside.',
+        foreseeable:'For the foreseeable future, the class stayed inside at break time.'
+      };
+      if (presets[word.toLowerCase()]) return presets[word.toLowerCase()];
+      return definition ? `${capitalize(word)} is in our word bank because we met it in a book.` : `We came across the word ${word} in our reading today.`;
+    }
+
+    function getFamilyId(){ return els.familyId.value.trim(); }
+    function updateBanner(text, ok=false){ els.statusBanner.textContent = text; els.statusBanner.className = ok ? 'banner ok-banner' : 'banner'; }
+    function updateVoiceBanner(text, ok=false){ els.voiceStatus.textContent = text; els.voiceStatus.className = ok ? 'banner ok-banner' : 'banner'; }
+
+    function mergeWords(a, b){
+      const map = new Map();
+      [...a, ...b].forEach(item => {
+        const existing = map.get(item.id);
+        if (!existing || new Date(item.updated_at || item.created_at || 0) > new Date(existing.updated_at || existing.created_at || 0)) {
+          map.set(item.id, item);
+        }
+      });
+      return [...map.values()].sort((x,y)=> new Date(y.updated_at || y.created_at || 0) - new Date(x.updated_at || x.created_at || 0));
+    }
+
+    function getVoicePrefs(){
+      try { return JSON.parse(localStorage.getItem(VOICE_SETTINGS_KEY) || '{}'); }
+      catch { return {}; }
+    }
+
+    function saveVoicePrefs(partial){
+      const next = { ...getVoicePrefs(), ...(partial || {}) };
+      localStorage.setItem(VOICE_SETTINGS_KEY, JSON.stringify(next));
+      return next;
+    }
+
+    function setupVoice(){
+      voiceManager = new window.WordVaultVoice({
+        preferredLang: 'en-GB',
+        onStatus: ({ ok, message }) => updateVoiceBanner(message, ok),
+        onVoicesChanged: (voices, selectedVoice) => renderVoiceOptions(voices, selectedVoice)
+      });
+      voiceManager.init();
+      const settings = getVoicePrefs();
+      if (settings.rate) els.rateInput.value = settings.rate;
+      if (settings.pitch) els.pitchInput.value = settings.pitch;
+    }
+
+    function renderVoiceOptions(voices, selectedVoice){
+      if (!voices.length) {
+        els.voiceSelect.innerHTML = '<option value="">No voices found yet</option>';
+        return;
+      }
+      const stored = voiceManager.getStoredVoiceName() || selectedVoice?.name || '';
+      els.voiceSelect.innerHTML = voices.map(voice => {
+        const selected = voice.name === stored ? 'selected' : '';
+        const label = `${voice.name} (${voice.lang})${voice.default ? ' · default' : ''}`;
+        return `<option value="${escapeHtml(voice.name)}" ${selected}>${escapeHtml(label)}</option>`;
+      }).join('');
+    }
+
+    function currentVoiceOptions(){
+      return {
+        voiceName: els.voiceSelect.value,
+        rate: Number(els.rateInput.value || 0.92),
+        pitch: Number(els.pitchInput.value || 1)
+      };
+    }
+
+    async function speakText(text){
+      if (!voiceManager) return;
+      const options = currentVoiceOptions();
+      saveVoicePrefs(options);
+      voiceManager.setStoredVoiceName(options.voiceName);
+      await voiceManager.speak(text, options);
+    }
+
+    async function hydrateFirebaseSettings(){
+      const s = cloudSettings();
+      els.firebaseConfig.value = s.configJson || '';
+      els.familyId.value = s.familyId || '';
+      if (!s.configJson || !s.familyId) {
+        firestore = null;
+        firebaseApp = null;
+        els.cloudStatus.textContent = 'Off';
+        updateBanner('Cloud sync is not configured yet. The app is using local browser storage only.');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(s.configJson);
+        firebaseApp = initializeApp(parsed, `word-vault-${parsed.projectId || 'default'}-${Date.now()}`);
+        firestore = getFirestore(firebaseApp);
+        try {
+          await enableIndexedDbPersistence(firestore);
+        } catch (error) {
+          console.warn('IndexedDB persistence not enabled', error);
+        }
+        els.cloudStatus.textContent = 'On';
+        updateBanner('Firebase sync is configured. The app can sync with Firestore.', true);
+      } catch (error) {
+        console.error(error);
+        firestore = null;
+        firebaseApp = null;
+        els.cloudStatus.textContent = 'Error';
+        updateBanner(`Firebase settings were found, but could not be initialised: ${error.message}`);
+      }
+    }
+
+    async function saveCloudConfig(){
+      const configJson = els.firebaseConfig.value.trim();
+      const familyId = getFamilyId();
+      if (!configJson || !familyId) return alert('Please add Firebase config JSON and a family ID.');
+      saveCloudSettings({ configJson, familyId });
+      await hydrateFirebaseSettings();
+      await syncNow();
+    }
+
+    function clearCloudConfig(){
+      localStorage.removeItem(CLOUD_SETTINGS_KEY);
+      firestore = null;
+      firebaseApp = null;
+      els.firebaseConfig.value = '';
+      els.familyId.value = '';
+      els.cloudStatus.textContent = 'Off';
+      updateBanner('Firebase settings cleared. The app is back to local-only mode.');
+      render();
+    }
+
+    async function testCloud(){
+      if (!firestore) return alert('Save Firebase settings first.');
+      const familyId = getFamilyId(); if (!familyId) return alert('Add a family ID first.');
+      const q = query(collection(firestore, 'words'), where('family_id', '==', familyId), orderBy('updated_at', 'desc'));
+      await getDocs(q);
+      alert('Firebase connection looks good.');
+    }
+
+    async function fetchCloudWords(){
+      if (!firestore) return null;
+      const familyId = getFamilyId(); if (!familyId) return null;
+      const q = query(collection(firestore, 'words'), where('family_id', '==', familyId), orderBy('updated_at', 'desc'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(d => d.data());
+    }
+
+    async function upsertCloudWord(item){
+      if (!firestore) return;
+      const payload = { ...item, updated_at: new Date().toISOString() };
+      await setDoc(doc(firestore, 'words', payload.id), payload, { merge:true });
+    }
+
+    async function deleteCloudWord(id){
+      if (!firestore) return;
+      await deleteDoc(doc(firestore, 'words', id));
+    }
+
+    async function syncNow(){
+      const local = localWords();
+      if (!firestore || !getFamilyId()) { render(); return; }
+      try {
+        for (const item of local) {
+          if (item.family_id === getFamilyId()) await upsertCloudWord(item);
+        }
+        const cloud = await fetchCloudWords();
+        if (cloud) saveLocalWords(mergeWords(local, cloud));
+        render();
+        updateBanner('Firebase sync completed successfully.', true);
+      } catch (err) {
+        console.error(err);
+        updateBanner(`Firebase sync failed: ${err.message || 'unknown error'}`);
+      }
+    }
+
+    function getFormData(){
+      return {
+        family_id: getFamilyId() || 'local-only',
         word: els.wordInput.value.trim(),
         source: els.sourceInput.value.trim(),
+        status: els.statusInput.value,
+        child_age: els.childAgeInput.value.trim(),
+        category: els.categoryInput.value.trim(),
         phonics: els.phonicsInput.value.trim(),
         definition: els.definitionInput.value.trim(),
         sentence: els.sentenceInput.value.trim(),
         similar: els.similarInput.value.trim(),
+        not_this: els.notInput.value.trim(),
         notes: els.notesInput.value.trim(),
-        created_at: serverTimestamp()
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    function clearForm(){
+      editingId = null; els.formTitle.textContent = 'Add a word';
+      ['wordInput','sourceInput','childAgeInput','categoryInput','phonicsInput','definitionInput','sentenceInput','similarInput','notInput','notesInput'].forEach(id => els[id].value='');
+      els.statusInput.value='new'; els.deleteBtn.style.display='none'; els.wordInput.focus();
+    }
+
+    function applyToForm(item){
+      editingId = item.id; els.formTitle.textContent='Edit word';
+      els.wordInput.value=item.word||''; els.sourceInput.value=item.source||''; els.statusInput.value=item.status||'new'; els.childAgeInput.value=item.child_age||''; els.categoryInput.value=item.category||'';
+      els.phonicsInput.value=item.phonics||''; els.definitionInput.value=item.definition||''; els.sentenceInput.value=item.sentence||''; els.similarInput.value=item.similar||''; els.notInput.value=item.not_this||''; els.notesInput.value=item.notes||'';
+      els.deleteBtn.style.display='inline-block'; window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    async function enrichWord(){
+      const word = els.wordInput.value.trim(); if (!word) return alert('Add a word first.');
+      els.enrichBtn.disabled = true; els.enrichBtn.textContent = 'Loading...';
+      try {
+        const [dictRes, similarRes] = await Promise.all([
+          fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`),
+          fetch(`https://api.datamuse.com/words?ml=${encodeURIComponent(word)}&max=8`)
+        ]);
+        let bestDefinition='';
+        if (dictRes.ok) { const dictData = await dictRes.json(); bestDefinition = dictData?.[0]?.meanings?.[0]?.definitions?.[0]?.definition || ''; }
+        let similar='';
+        if (similarRes.ok) { const similarData = await similarRes.json(); similar = (similarData || []).map(x=>x.word).slice(0,6).join(', '); }
+        els.phonicsInput.value ||= splitWord(word);
+        els.definitionInput.value ||= toChildFriendly(word, bestDefinition);
+        els.sentenceInput.value ||= makeSentence(word, bestDefinition);
+        els.similarInput.value ||= similar;
+        els.notInput.value ||= `not a different word that only looks similar to ${word}`;
+      } catch (err) {
+        console.error(err); alert('Could not auto-fill this word just now. You can still enter it manually.');
+      } finally {
+        els.enrichBtn.disabled = false; els.enrichBtn.textContent = 'Auto-fill helpful info';
+      }
+    }
+
+    async function saveForm(){
+      const data = getFormData();
+      if (!data.word) return alert('Please enter a word.');
+      let words = localWords();
+      if (editingId) {
+        const idx = words.findIndex(w => w.id === editingId);
+        if (idx !== -1) words[idx] = { ...words[idx], ...data };
+      } else {
+        words.unshift({ id: crypto.randomUUID(), created_at:new Date().toISOString(), ...data });
+      }
+      saveLocalWords(words);
+      const saved = editingId ? words.find(w => w.id === editingId) : words[0];
+      if (firestore && getFamilyId()) {
+        try { await upsertCloudWord(saved); updateBanner(`Saved ${saved.word} locally and in Firebase.`, true); }
+        catch(err){ console.error(err); updateBanner(`Saved locally, but Firebase sync failed: ${err.message}`); }
+      }
+      clearForm(); render();
+    }
+
+    async function deleteWord(){
+      if (!editingId) return;
+      const id = editingId;
+      saveLocalWords(localWords().filter(w => w.id !== id));
+      if (firestore && getFamilyId()) {
+        try { await deleteCloudWord(id); updateBanner('Deleted locally and in Firebase.', true); }
+        catch(err){ console.error(err); updateBanner(`Deleted locally, but Firebase delete failed: ${err.message}`); }
+      }
+      clearForm(); render();
+    }
+
+    function exportJson(){
+      const blob = new Blob([JSON.stringify(localWords().filter(w => !getFamilyId() || w.family_id === getFamilyId()), null, 2)], { type:'application/json' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download='word-vault-v3-export.json'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    function importJson(file){
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const data = JSON.parse(reader.result); if (!Array.isArray(data)) throw new Error('Invalid file');
+          const withFamily = data.map(item => ({ ...item, family_id: item.family_id || getFamilyId() || 'local-only', updated_at: new Date().toISOString(), id: item.id || crypto.randomUUID() }));
+          saveLocalWords(mergeWords(localWords(), withFamily));
+          if (firestore && getFamilyId()) {
+            for (const item of withFamily) await upsertCloudWord(item);
+          }
+          render(); alert('Import complete.');
+        } catch (err) { console.error(err); alert('That file could not be imported.'); }
+      };
+      reader.readAsText(file);
+    }
+
+    function seedWords(){
+      const familyId = getFamilyId() || 'local-only';
+      const seeded = starterWords.map(w => ({ ...w, id: crypto.randomUUID(), family_id: familyId, created_at:new Date().toISOString(), updated_at:new Date().toISOString() }));
+      saveLocalWords(mergeWords(localWords(), seeded));
+      render();
+      if (firestore && getFamilyId()) syncNow();
+    }
+
+    async function maybeHydrateFromCloud(){
+      if (!firestore || !getFamilyId()) return;
+      try {
+        const cloud = await fetchCloudWords();
+        if (cloud?.length) saveLocalWords(mergeWords(localWords(), cloud));
+        render();
+      } catch (err) {
+        console.error(err);
+        updateBanner(`Could not read Firebase words yet: ${err.message}`);
+      }
+    }
+
+    function render(){
+      const familyId = getFamilyId();
+      const words = localWords().filter(w => !familyId || w.family_id === familyId);
+      const q = els.searchInput.value.trim().toLowerCase();
+      const filter = els.filterInput.value;
+      const filtered = words.filter(w => {
+        const hay = [w.word,w.source,w.definition,w.sentence,w.similar,w.notes,w.phonics,w.not_this,w.category,w.child_age].join(' ').toLowerCase();
+        return (!q || hay.includes(q)) && (filter === 'all' || w.status === filter);
       });
-      els.saveStatus.textContent = 'Saved to Firestore.';
-      await loadWords();
-    } catch (err) {
-      els.saveStatus.textContent = `Save failed: ${err.message}`;
+      els.countWords.textContent = words.length;
+      els.countReview.textContent = words.filter(w => w.status === 'review').length;
+      els.countSources.textContent = new Set(words.map(w => (w.source || '').trim()).filter(Boolean)).size;
+      if (!filtered.length) { els.wordList.innerHTML = '<div class="empty">No words found yet. Add a word or load the starter set.</div>'; return; }
+      els.wordList.innerHTML = filtered.map(item => `
+        <article class="word-card">
+          <div class="word-head">
+            <div>
+              <h3 class="word-title">${escapeHtml(item.word)}</h3>
+              <div class="muted">${escapeHtml(item.source || 'No source added')}</div>
+            </div>
+            <div class="actions">
+              <button class="secondary" onclick="editWord('${item.id}')">Edit</button>
+              <button class="secondary" onclick="speakSavedWord('${escapeJs(item.word)}')">Speak</button>
+            </div>
+          </div>
+          <div class="tag-row">
+            <span class="tag">${escapeHtml(item.status || 'new')}</span>
+            ${item.phonics ? `<span class="tag">${escapeHtml(item.phonics)}</span>` : ''}
+            ${item.category ? `<span class="tag">${escapeHtml(item.category)}</span>` : ''}
+            ${item.child_age ? `<span class="tag">age ${escapeHtml(item.child_age)}</span>` : ''}
+          </div>
+          <div class="meta">
+            ${item.definition ? `<div class="meta-block"><div class="meta-title">Meaning</div>${escapeHtml(item.definition)}</div>` : ''}
+            ${item.sentence ? `<div class="meta-block"><div class="meta-title">Sentence</div>${escapeHtml(item.sentence)}</div>` : ''}
+            ${item.similar ? `<div class="meta-block"><div class="meta-title">Similar words</div>${escapeHtml(item.similar)}</div>` : ''}
+            ${item.not_this ? `<div class="meta-block"><div class="meta-title">What it is not</div>${escapeHtml(item.not_this)}</div>` : ''}
+            ${item.notes ? `<div class="meta-block"><div class="meta-title">Parent notes</div>${escapeHtml(item.notes)}</div>` : ''}
+          </div>
+        </article>`).join('');
     }
-  }
 
-  async function loadWords(){
-    const familyId = els.familyId.value.trim() || 'shamir-son-reading';
-    try {
-      const q = query(collection(db, 'words'), where('family_id', '==', familyId), orderBy('created_at', 'desc'));
-      const snap = await getDocs(q);
-      els.list.innerHTML = '';
-      if (snap.empty) { els.list.innerHTML = '<div class="small">No words saved yet.</div>'; return; }
-      snap.forEach(doc => {
-        const item = doc.data();
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.innerHTML = `<strong>${item.word || ''}</strong><div class="meta">${item.source || ''}</div><div>${item.definition || ''}</div><div class="small">${item.phonics || ''}</div>`;
-        els.list.appendChild(div);
-      });
-    } catch (err) {
-      els.list.innerHTML = `<div class="small warn">Load failed: ${err.message}</div>`;
-    }
-  }
+    window.editWord = (id) => { const item = localWords().find(w => w.id === id); if (item) applyToForm(item); };
+    window.speakSavedWord = (word) => speakText(word);
 
-  els.voiceSelect.addEventListener('change', () => voice.setVoiceByIndex(els.voiceSelect.value));
-  els.wakeBtn.addEventListener('click', async () => { await voice.wakeUp(); await loadVoices(); });
-  els.refreshVoicesBtn.addEventListener('click', loadVoices);
-  els.speakWordBtn.addEventListener('click', async () => {
-    try {
-      await voice.speak(els.wordInput.value.trim(), { rate: els.rateInput.value, pitch: els.pitchInput.value });
-      els.speechStatus.textContent = 'Word played successfully.';
-    } catch (err) {
-      els.speechStatus.textContent = `Speech failed: ${err}`;
-    }
-  });
-  els.speakSentenceBtn.addEventListener('click', async () => {
-    try {
-      await voice.speak(els.sentenceInput.value.trim(), { rate: els.rateInput.value, pitch: els.pitchInput.value });
-      els.speechStatus.textContent = 'Sentence played successfully.';
-    } catch (err) {
-      els.speechStatus.textContent = `Speech failed: ${err}`;
-    }
-  });
-  els.saveBtn.addEventListener('click', saveWord);
-  els.loadBtn.addEventListener('click', loadWords);
+    els.saveBtn.addEventListener('click', saveForm);
+    els.clearBtn.addEventListener('click', clearForm);
+    els.deleteBtn.addEventListener('click', deleteWord);
+    els.enrichBtn.addEventListener('click', enrichWord);
+    els.speakBtn.addEventListener('click', async () => {
+      await voiceManager.warmUp();
+      await speakText(els.wordInput.value.trim());
+    });
+    els.speakSentenceBtn.addEventListener('click', async () => {
+      await voiceManager.warmUp();
+      await speakText(els.sentenceInput.value.trim());
+    });
+    els.exportBtn.addEventListener('click', exportJson);
+    els.importBtn.addEventListener('click', () => els.importFile.click());
+    els.importFile.addEventListener('change', e => { const file = e.target.files?.[0]; if (file) importJson(file); e.target.value=''; });
+    els.seedBtn.addEventListener('click', seedWords);
+    els.searchInput.addEventListener('input', render);
+    els.filterInput.addEventListener('change', render);
+    els.saveCloudBtn.addEventListener('click', saveCloudConfig);
+    els.testCloudBtn.addEventListener('click', testCloud);
+    els.clearCloudBtn.addEventListener('click', clearCloudConfig);
+    els.syncBtn.addEventListener('click', syncNow);
+    els.refreshVoicesBtn.addEventListener('click', () => voiceManager.loadVoices());
+    els.warmUpVoiceBtn.addEventListener('click', async () => {
+      const ok = await voiceManager.warmUp();
+      updateVoiceBanner(ok ? 'Voice wake-up attempt sent. Try speaking now.' : 'Voice wake-up did not fully complete, but you can still try speaking.', ok);
+    });
+    els.testVoiceBtn.addEventListener('click', async () => {
+      const opts = currentVoiceOptions();
+      saveVoicePrefs(opts);
+      voiceManager.setStoredVoiceName(opts.voiceName);
+      await voiceManager.warmUp();
+      await voiceManager.speak('Hello. This is the current Word Vault voice.', opts);
+    });
+    els.stopVoiceBtn.addEventListener('click', () => voiceManager.stop());
+    els.voiceSelect.addEventListener('change', () => {
+      const opts = currentVoiceOptions();
+      saveVoicePrefs(opts);
+      voiceManager.setStoredVoiceName(opts.voiceName);
+      updateVoiceBanner('Voice selection saved.', true);
+    });
+    els.rateInput.addEventListener('change', () => saveVoicePrefs(currentVoiceOptions()));
+    els.pitchInput.addEventListener('change', () => saveVoicePrefs(currentVoiceOptions()));
 
-  await loadVoices();
-  await testDb();
-  await loadWords();
-</script>
+    setupVoice();
+    await hydrateFirebaseSettings();
+    render();
+    await maybeHydrateFromCloud();
+  </script>
 </body>
 </html>
