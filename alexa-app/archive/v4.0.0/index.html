@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Vault v4 · Review Mode</title>
+  <style>
+    :root{--bg:#f6f8fb;--panel:#fff;--line:#dbe3ee;--text:#1f2937;--muted:#6b7280;--accent:#2563eb;--accent-soft:#e8f0ff;--good:#166534;--warn:#9a3412;--bad:#991b1b}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+    h1,h2,h3,p{margin-top:0}.small{font-size:12px;color:var(--muted)} .good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+    .grid{display:grid;grid-template-columns:380px 1fr;gap:18px}.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-bottom:18px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .tab{padding:10px 12px;border:1px solid var(--line);background:#fff;border-radius:12px;cursor:pointer;font-weight:700}.tab.active{background:var(--accent-soft);border-color:#c7dbff;color:var(--accent)}
+    input,textarea,select,button{font:inherit} input,textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+    textarea{min-height:86px;resize:vertical} button{border:0;border-radius:12px;padding:11px 14px;font-weight:700;cursor:pointer}
+    .primary{background:var(--accent);color:#fff}.secondary{background:#eef2f7;color:var(--text)}.danger{background:#fee2e2;color:var(--bad)}
+    .field{margin-bottom:12px} label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fbfdff}.stat .num{font-size:26px;font-weight:800}
+    .card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff;margin-top:10px}.word-card strong{font-size:22px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;font-size:12px;font-weight:700}
+    .hidden{display:none!important}.review-grid{display:grid;grid-template-columns:1fr 320px;gap:18px}.review-card{min-height:340px}.choice{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;margin-bottom:10px}
+    .choice.correct{background:#dcfce7;border-color:#86efac}.choice.incorrect{background:#fee2e2;border-color:#fca5a5}.flash-word{font-size:40px;font-weight:800;margin:18px 0}.flash-detail{font-size:18px;line-height:1.5}
+    .badge{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px;margin-bottom:8px}
+    .scoreline{font-size:14px;font-weight:700}.list{display:grid;gap:10px}.meta{color:var(--muted);font-size:13px}.empty{border:2px dashed var(--line);border-radius:16px;padding:24px;text-align:center;color:var(--muted)}
+    @media (max-width: 980px){.hero,.grid,.review-grid,.split,.stats{grid-template-columns:1fr}.wrap{padding:12px}}
+  </style>
+  <script src="word-vault-voice.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div class="panel">
+      <div class="badge">Word Vault v4</div>
+      <h1>Review mode for “read, don’t guess” practice</h1>
+      <p>This version keeps your Firebase setup from v3 and adds active review. It can quiz meanings, run flashcards, and revisit the exact tricky words your son has saved from reading.</p>
+      <div class="stats">
+        <div class="stat"><div class="small">Saved words</div><div class="num" id="countWords">0</div></div>
+        <div class="stat"><div class="small">Need review</div><div class="num" id="countReview">0</div></div>
+        <div class="stat"><div class="small">Quiz score</div><div class="num" id="countScore">0</div></div>
+        <div class="stat"><div class="small">Signed in</div><div class="num" id="countSignedIn">No</div></div>
+      </div>
+      <div id="dbStatus" class="small" style="margin-top:12px">Checking Firebase…</div>
+    </div>
+    <div class="panel">
+      <h2>Settings</h2>
+      <div class="field"><label for="familyId">Family / child ID</label><input id="familyId" value="shamir-son-reading" /></div>
+      <div class="small">This groups one child’s word bank. It is for organisation, not security.</div>
+      <h3 style="margin-top:16px">Voice</h3>
+      <div class="row">
+        <button class="secondary" id="wakeBtn">Wake up voice</button>
+        <button class="secondary" id="refreshVoicesBtn">Refresh voices</button>
+      </div>
+      <div class="field"><label for="voiceSelect">Voice</label><select id="voiceSelect"></select></div>
+      <div class="split">
+        <div class="field"><label for="rateInput">Rate</label><input id="rateInput" type="range" min="0.5" max="1.2" step="0.05" value="0.9" /></div>
+        <div class="field"><label for="pitchInput">Pitch</label><input id="pitchInput" type="range" min="0.7" max="1.4" step="0.05" value="1" /></div>
+      </div>
+      <div class="small" id="speechStatus">Speech not tested yet.</div>
+    </div>
+  </section>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="library">Library</button>
+    <button class="tab" data-tab="review">Review mode</button>
+  </div>
+
+  <section id="libraryTab" class="grid">
+    <div class="panel">
+      <h2>Add a word</h2>
+      <div class="field"><label for="wordInput">Word</label><input id="wordInput" placeholder="blizzard" /></div>
+      <div class="field"><label for="sourceInput">Book or source</label><input id="sourceInput" placeholder="There's a Yeti in the Playground" /></div>
+      <div class="split">
+        <div class="field"><label for="phonicsInput">Chunks / syllables</label><input id="phonicsInput" placeholder="bliz-zard" /></div>
+        <div class="field"><label for="statusInput">Status</label><select id="statusInput"><option value="new">New</option><option value="review" selected>Needs review</option><option value="secure">Secure</option></select></div>
+      </div>
+      <div class="field"><label for="definitionInput">Child-friendly meaning</label><textarea id="definitionInput"></textarea></div>
+      <div class="field"><label for="sentenceInput">Example sentence</label><textarea id="sentenceInput"></textarea></div>
+      <div class="field"><label for="similarInput">Similar words</label><input id="similarInput" placeholder="snowstorm, whiteout" /></div>
+      <div class="field"><label for="notInput">What it is not</label><input id="notInput" placeholder="not drizzle, not just cold weather" /></div>
+      <div class="field"><label for="notesInput">Parent notes</label><textarea id="notesInput" placeholder="Guessed lizard first. Needs to check the middle and end of the word."></textarea></div>
+      <div class="row">
+        <button class="primary" id="saveBtn">Save word</button>
+        <button class="secondary" id="speakWordBtn">Speak word</button>
+        <button class="secondary" id="speakSentenceBtn">Speak sentence</button>
+      </div>
+      <div class="small" id="saveStatus" style="margin-top:10px"></div>
+    </div>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <h2 style="margin-bottom:0">Saved words</h2>
+        <button class="secondary" id="reloadBtn">Reload</button>
+      </div>
+      <div class="field"><label for="searchInput">Search</label><input id="searchInput" placeholder="Find word, meaning, source, or notes" /></div>
+      <div id="list" class="list"></div>
+    </div>
+  </section>
+
+  <section id="reviewTab" class="hidden review-grid">
+    <div class="panel review-card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2 id="reviewTitle">Flashcard</h2>
+          <div class="small">Active review for saved words</div>
+        </div>
+        <div class="row">
+          <select id="reviewModeSelect">
+            <option value="flash">Flashcards</option>
+            <option value="meaning">Meaning match</option>
+          </select>
+          <button class="secondary" id="nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div id="reviewEmpty" class="empty hidden">No review words yet. Save a few words first, then come back here.</div>
+
+      <div id="flashWrap" class="hidden">
+        <div class="flash-word" id="flashWord">blizzard</div>
+        <div class="row">
+          <button class="primary" id="revealBtn">Reveal meaning</button>
+          <button class="secondary" id="flashSpeakBtn">Speak</button>
+        </div>
+        <div id="flashAnswer" class="card hidden">
+          <div class="flash-detail" id="flashDefinition"></div>
+          <div class="small" id="flashChunks" style="margin-top:10px"></div>
+          <div class="small" id="flashSentence" style="margin-top:8px"></div>
+          <div class="small" id="flashNotes" style="margin-top:8px"></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="secondary" id="markReviewBtn">Still tricky</button>
+          <button class="primary" id="markSecureBtn">Got it</button>
+        </div>
+      </div>
+
+      <div id="meaningWrap" class="hidden">
+        <div class="flash-word" id="meaningWord">blizzard</div>
+        <div class="small" style="margin-bottom:12px">Tap the best meaning.</div>
+        <div id="meaningChoices"></div>
+        <div id="meaningFeedback" class="small"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Review summary</h2>
+      <div class="scoreline" id="scoreLine">0 right · 0 wrong</div>
+      <div class="small" style="margin-top:8px">Use this as a short daily review. Flashcards are best for anchoring meaning. Meaning match is best for checking whether the word is really secure.</div>
+      <div class="card" style="margin-top:14px">
+        <h3>Suggested daily routine</h3>
+        <p class="small">1. Do 5 flashcards. 2. Do 5 meaning-match questions. 3. Re-read the book sentence aloud. 4. Mark only truly secure words as “Got it”.</p>
+      </div>
+      <div class="card">
+        <h3>Current word details</h3>
+        <div class="small" id="currentMeta">No word selected yet.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getAnalytics, isSupported as analyticsSupported } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+  import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBNW1VgFn_cdkcsXEYEkgoKByBmStd86fA",
+    authDomain: "word-vault-b0ebb.firebaseapp.com",
+    projectId: "word-vault-b0ebb",
+    storageBucket: "word-vault-b0ebb.firebasestorage.app",
+    messagingSenderId: "196919947356",
+    appId: "1:196919947356:web:7433d030a26bfb74c5b699",
+    measurementId: "G-EE5KDH4HEK"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  if (await analyticsSupported()) { try { getAnalytics(app); } catch {} }
+  const db = getFirestore(app);
+  const voice = new window.WordVaultVoice({ lang: 'en-GB' });
+
+  const els = Object.fromEntries([
+    'countWords','countReview','countScore','countSignedIn','dbStatus','familyId','voiceSelect','rateInput','pitchInput','speechStatus','wakeBtn','refreshVoicesBtn',
+    'wordInput','sourceInput','phonicsInput','statusInput','definitionInput','sentenceInput','similarInput','notInput','notesInput','saveBtn','speakWordBtn','speakSentenceBtn','saveStatus','reloadBtn','searchInput','list',
+    'libraryTab','reviewTab','reviewModeSelect','nextBtn','reviewTitle','reviewEmpty','flashWrap','flashWord','revealBtn','flashSpeakBtn','flashAnswer','flashDefinition','flashChunks','flashSentence','flashNotes','markReviewBtn','markSecureBtn','meaningWrap','meaningWord','meaningChoices','meaningFeedback','scoreLine','currentMeta'
+  ].map(id => [id, document.getElementById(id)]));
+
+  let words = [];
+  let filteredWords = [];
+  let reviewWords = [];
+  let currentReviewWord = null;
+  let currentCorrectMeaning = '';
+  let score = { right: 0, wrong: 0 };
+
+  async function loadVoices() {
+    const voices = await voice.getVoices();
+    els.voiceSelect.innerHTML = '';
+    voices.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${v.name} (${v.lang})`;
+      if (voice.voice && v.name === voice.voice.name) opt.selected = true;
+      els.voiceSelect.appendChild(opt);
+    });
+    els.speechStatus.textContent = voices.length ? `Loaded ${voices.length} voices.` : 'No voices found yet. Tap Wake up voice, then Refresh voices.';
+  }
+
+  function getFamilyId() {
+    return els.familyId.value.trim() || 'shamir-son-reading';
+  }
+
+  function shuffle(arr) {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function updateStats() {
+    els.countWords.textContent = String(words.length);
+    els.countReview.textContent = String(words.filter(w => w.status !== 'secure').length);
+    els.countScore.textContent = `${score.right}/${score.right + score.wrong}`;
+    els.countSignedIn.textContent = 'Web';
+    els.scoreLine.textContent = `${score.right} right · ${score.wrong} wrong`;
+  }
+
+  function renderList() {
+    const q = els.searchInput.value.trim().toLowerCase();
+    filteredWords = words.filter(w => {
+      const hay = [w.word,w.definition,w.source,w.notes,w.phonics,w.similar,w.not_this].join(' ').toLowerCase();
+      return !q || hay.includes(q);
+    });
+    els.list.innerHTML = '';
+    if (!filteredWords.length) {
+      els.list.innerHTML = '<div class="empty">No matching words yet.</div>';
+      return;
+    }
+    filteredWords.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'card word-card';
+      div.innerHTML = `
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div>
+            <strong>${item.word || ''}</strong>
+            <div class="meta">${item.source || ''}</div>
+          </div>
+          <span class="pill">${item.status || 'review'}</span>
+        </div>
+        <div style="margin-top:8px">${item.definition || ''}</div>
+        <div class="small" style="margin-top:8px"><strong>Chunks:</strong> ${item.phonics || '—'}</div>
+        <div class="small" style="margin-top:6px"><strong>Sentence:</strong> ${item.sentence || '—'}</div>
+        <div class="small" style="margin-top:6px"><strong>Parent note:</strong> ${item.notes || '—'}</div>
+      `;
+      els.list.appendChild(div);
+    });
+  }
+
+  async function loadWords() {
+    try {
+      const q = query(collection(db, 'words'), where('family_id', '==', getFamilyId()), orderBy('created_at', 'desc'));
+      const snap = await getDocs(q);
+      words = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      reviewWords = words.filter(w => w.status !== 'secure');
+      els.dbStatus.textContent = `Connected to Firestore. Loaded ${words.length} word${words.length === 1 ? '' : 's'}.`;
+      els.dbStatus.className = 'small good';
+      updateStats();
+      renderList();
+      prepareReview();
+    } catch (err) {
+      els.dbStatus.textContent = `Firebase sync failed: ${err.message}`;
+      els.dbStatus.className = 'small warn';
+      els.list.innerHTML = `<div class="empty">Load failed: ${err.message}</div>`;
+    }
+  }
+
+  async function saveWord() {
+    const word = els.wordInput.value.trim();
+    if (!word) {
+      els.saveStatus.textContent = 'Please enter a word first.';
+      els.saveStatus.className = 'small warn';
+      return;
+    }
+    try {
+      await addDoc(collection(db, 'words'), {
+        family_id: getFamilyId(),
+        word,
+        source: els.sourceInput.value.trim(),
+        phonics: els.phonicsInput.value.trim(),
+        status: els.statusInput.value,
+        definition: els.definitionInput.value.trim(),
+        sentence: els.sentenceInput.value.trim(),
+        similar: els.similarInput.value.trim(),
+        not_this: els.notInput.value.trim(),
+        notes: els.notesInput.value.trim(),
+        created_at: serverTimestamp()
+      });
+      els.saveStatus.textContent = 'Saved to Firestore.';
+      els.saveStatus.className = 'small good';
+      ['wordInput','sourceInput','phonicsInput','definitionInput','sentenceInput','similarInput','notInput','notesInput'].forEach(id => els[id].value = '');
+      els.statusInput.value = 'review';
+      await loadWords();
+    } catch (err) {
+      els.saveStatus.textContent = `Save failed: ${err.message}`;
+      els.saveStatus.className = 'small warn';
+    }
+  }
+
+  function setTab(name) {
+    document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
+    els.libraryTab.classList.toggle('hidden', name !== 'library');
+    els.reviewTab.classList.toggle('hidden', name !== 'review');
+    if (name === 'review') prepareReview();
+  }
+
+  function prepareReview() {
+    reviewWords = words.filter(w => w.status !== 'secure');
+    updateStats();
+    const mode = els.reviewModeSelect.value;
+    els.reviewEmpty.classList.toggle('hidden', reviewWords.length > 0);
+    els.flashWrap.classList.add('hidden');
+    els.meaningWrap.classList.add('hidden');
+    if (!reviewWords.length) {
+      els.currentMeta.textContent = 'No word selected yet.';
+      return;
+    }
+    currentReviewWord = reviewWords[Math.floor(Math.random() * reviewWords.length)];
+    els.currentMeta.textContent = `${currentReviewWord.word} · ${currentReviewWord.source || 'No source'} · ${currentReviewWord.phonics || 'No chunks saved'}`;
+    if (mode === 'flash') renderFlashcard();
+    else renderMeaningMatch();
+  }
+
+  function renderFlashcard() {
+    els.reviewTitle.textContent = 'Flashcard';
+    els.flashWrap.classList.remove('hidden');
+    els.flashAnswer.classList.add('hidden');
+    els.flashWord.textContent = currentReviewWord.word || '';
+    els.flashDefinition.textContent = currentReviewWord.definition || 'No meaning saved yet.';
+    els.flashChunks.textContent = `Chunks: ${currentReviewWord.phonics || '—'}`;
+    els.flashSentence.textContent = `Sentence: ${currentReviewWord.sentence || '—'}`;
+    els.flashNotes.textContent = `Parent note: ${currentReviewWord.notes || '—'}`;
+  }
+
+  function collectDistractors(correctId) {
+    const candidates = words.filter(w => w.id !== correctId && (w.definition || '').trim());
+    return shuffle(candidates).slice(0, 3).map(w => w.definition);
+  }
+
+  function renderMeaningMatch() {
+    els.reviewTitle.textContent = 'Meaning match';
+    els.meaningWrap.classList.remove('hidden');
+    els.meaningFeedback.textContent = '';
+    els.meaningWord.textContent = currentReviewWord.word || '';
+    currentCorrectMeaning = currentReviewWord.definition || 'No meaning saved yet.';
+    const options = shuffle([currentCorrectMeaning, ...collectDistractors(currentReviewWord.id)]).slice(0, 4);
+    if (!options.includes(currentCorrectMeaning)) options[Math.floor(Math.random() * Math.max(1, options.length))] = currentCorrectMeaning;
+    els.meaningChoices.innerHTML = '';
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'choice';
+      btn.textContent = opt;
+      btn.addEventListener('click', async () => {
+        const correct = opt === currentCorrectMeaning;
+        btn.classList.add(correct ? 'correct' : 'incorrect');
+        [...els.meaningChoices.querySelectorAll('button')].forEach(b => b.disabled = true);
+        [...els.meaningChoices.querySelectorAll('button')].forEach(b => { if (b.textContent === currentCorrectMeaning) b.classList.add('correct'); });
+        score[correct ? 'right' : 'wrong'] += 1;
+        updateStats();
+        els.meaningFeedback.textContent = correct ? 'Correct.' : `Not quite. The right meaning was: ${currentCorrectMeaning}`;
+        if (correct) await setWordStatus(currentReviewWord.id, 'secure', false);
+      });
+      els.meaningChoices.appendChild(btn);
+    });
+  }
+
+  async function setWordStatus(id, status, refresh = true) {
+    try {
+      await updateDoc(doc(db, 'words', id), { status });
+      const target = words.find(w => w.id === id);
+      if (target) target.status = status;
+      if (refresh) await loadWords();
+      else {
+        reviewWords = words.filter(w => w.status !== 'secure');
+        updateStats();
+      }
+    } catch (err) {
+      els.dbStatus.textContent = `Status update failed: ${err.message}`;
+      els.dbStatus.className = 'small warn';
+    }
+  }
+
+  document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
+  els.voiceSelect.addEventListener('change', () => voice.setVoiceByIndex(els.voiceSelect.value));
+  els.wakeBtn.addEventListener('click', async () => { await voice.wakeUp(); await loadVoices(); });
+  els.refreshVoicesBtn.addEventListener('click', loadVoices);
+  els.speakWordBtn.addEventListener('click', async () => {
+    try { await voice.speak(els.wordInput.value.trim(), { rate: els.rateInput.value, pitch: els.pitchInput.value }); els.speechStatus.textContent = 'Word played successfully.'; }
+    catch (err) { els.speechStatus.textContent = `Speech failed: ${err}`; }
+  });
+  els.speakSentenceBtn.addEventListener('click', async () => {
+    try { await voice.speak(els.sentenceInput.value.trim(), { rate: els.rateInput.value, pitch: els.pitchInput.value }); els.speechStatus.textContent = 'Sentence played successfully.'; }
+    catch (err) { els.speechStatus.textContent = `Speech failed: ${err}`; }
+  });
+  els.flashSpeakBtn.addEventListener('click', async () => {
+    try { await voice.speak(currentReviewWord?.word || '', { rate: els.rateInput.value, pitch: els.pitchInput.value }); }
+    catch (err) { els.speechStatus.textContent = `Speech failed: ${err}`; }
+  });
+  els.revealBtn.addEventListener('click', () => els.flashAnswer.classList.remove('hidden'));
+  els.markReviewBtn.addEventListener('click', async () => { if (currentReviewWord) { await setWordStatus(currentReviewWord.id, 'review'); prepareReview(); } });
+  els.markSecureBtn.addEventListener('click', async () => { if (currentReviewWord) { score.right += 1; updateStats(); await setWordStatus(currentReviewWord.id, 'secure'); prepareReview(); } });
+  els.nextBtn.addEventListener('click', prepareReview);
+  els.reviewModeSelect.addEventListener('change', prepareReview);
+  els.saveBtn.addEventListener('click', saveWord);
+  els.reloadBtn.addEventListener('click', loadWords);
+  els.searchInput.addEventListener('input', renderList);
+  els.familyId.addEventListener('change', loadWords);
+
+  await loadVoices();
+  await loadWords();
+</script>
+</body>
+</html>
