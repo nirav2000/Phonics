@@ -160,15 +160,7 @@
   import { getAnalytics, isSupported as analyticsSupported } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
   import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBNW1VgFn_cdkcsXEYEkgoKByBmStd86fA",
-    authDomain: "word-vault-b0ebb.firebaseapp.com",
-    projectId: "word-vault-b0ebb",
-    storageBucket: "word-vault-b0ebb.firebasestorage.app",
-    messagingSenderId: "196919947356",
-    appId: "1:196919947356:web:7433d030a26bfb74c5b699",
-    measurementId: "G-EE5KDH4HEK"
-  };
+  
 
   const app = initializeApp(firebaseConfig);
   if (await analyticsSupported()) { try { getAnalytics(app); } catch {} }
